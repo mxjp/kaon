@@ -147,3 +147,193 @@ export const watch = (expr, cb) => {
 export const untrack = fn => _in(_ACCESS, () => {}, fn);
 
 export const get = expr => typeof expr === "function" ? expr() : expr;
+
+const _frag = () => document.createDocumentFragment();
+
+const _empty = () => document.createComment("");
+
+const _text = () => expr => {
+	const text = document.createTextNode("");
+	watch(expr, v => text.textContent = v ?? "");
+	return text;
+};
+
+export const render = (...content) => new View((update, self) => {
+	content = content.flat(Infinity);
+	const empty = _empty();
+	const parent = _frag();
+	for (let i = 0; i < content.length; i++) {
+		const part = content[i];
+		if (part instanceof Node) {
+			parent.appendChild(part);
+		} else if (part instanceof View) {
+			part.appendTo(parent);
+			if (content.length === 1) {
+				part.setOwner(update);
+			} else if (i === 0) {
+				part.setOwner((n, _) => update(n, self.last));
+			} else if (i === content.length - 1) {
+				part.setOwner((_, n) => update(self.first, n));
+			}
+		} else {
+			parent.appendChild(_text(part));
+		}
+	}
+	update(parent.firstChild ?? empty, parent.lastChild ?? empty);
+});
+
+export class View {
+	#owner;
+
+	constructor(init) {
+		init((first, last) => {
+			this.first = first;
+			this.last = last;
+			this.#owner?.(first, last);
+		}, this);
+	}
+
+	setOwner(owner) {
+		this.#owner = owner;
+		teardown(() => this.#owner = undefined);
+	}
+
+	appendTo(parent) {
+		let { first, last } = this;
+		for (;;) {
+			const next = first.nextSibling;
+			parent.appendChild(first);
+			if (first === last) break;
+			first = next;
+		}
+	}
+
+	insertBefore(parent, ref) {
+		let { first, last } = this;
+		for (;;) {
+			const next = first.nextSibling;
+			parent.insertBefore(first, ref);
+			if (first === last) break;
+			first = next;
+		}
+	}
+
+	insertAfter(parent, ref) {
+		const next = ref.nextSibling;
+		if (next) {
+			this.insertBefore(parent, next);
+		} else {
+			this.appendTo(parent);
+		}
+	}
+
+	detach() {
+		const { first, last } = this;
+		if (first === last) {
+			first.parentNode?.removeChild(first);
+			return first;
+		} else {
+			const frag = _frag();
+			this.appendTo(frag);
+			return frag;
+		}
+	}
+}
+
+export const nest = (expr, component) => new View((update, self) => {
+	watch(expr, value => {
+		const last = self.last;
+		const parent = last?.parentNode;
+		let view;
+		if (parent) {
+			const anchor = last.nextSibling;
+			self.detach();
+			view = render(component(value));
+			if (anchor) {
+				view.insertBefore(parent, anchor);
+			} else {
+				view.appendTo(parent);
+			}
+		}
+		update(view.first, view.last);
+		view.setOwner(update);
+	});
+});
+
+export const iter = (expr, component) => new View(update => {
+	let cycle = 0;
+	const first = _empty();
+	const instances = new Map();
+	teardown(() => instances.forEach(v => v.d()));
+	watch(expr, values => {
+		cycle++;
+		let index = 0;
+		let last = first;
+		let parent = first.parentNode;
+		if (!parent) {
+			(parent = _frag()).appendChild(first);
+		}
+		for (const value of values) {
+			let instance = instances.get(value);
+			if (!instance) {
+				instance = { c: cycle, i: $(index) };
+				instance.d = capture(() => {
+					instance.v = render(component(value, instance.i));
+				});
+				instances.set(value, instance);
+			} else {
+				instance.c = cycle;
+				instance.i(index);
+			}
+			if (last.nextSibling !== instance.v.first) {
+				instance.v.insertAfter(parent, last);
+			}
+			last = instance.v.last;
+			index++;
+		}
+		for (const [value, instance] of instances) {
+			if (instance.c !== cycle) {
+				instances.delete(value);
+				instance.d();
+				instance.v.detach();
+			}
+		}
+		update(first, last);
+	});
+});
+
+export class Builder extends View {
+	constructor(elem) {
+		super(update => update(elem, elem));
+		this.elem = elem;
+	}
+
+	set(name, expr) {
+		watch(expr, value => {
+			if (value === null || value === undefined || value === false) {
+				this.elem.removeAttribute(name);
+			} else {
+				this.elem.setAttribute(name, String(value));
+			}
+		});
+		return this;
+	}
+
+	prop(name, expr) {
+		watch(expr, value => this.elem[name] = value);
+		return this;
+	}
+
+	on(event, fn, opts) {
+		this.elem.addEventListener(event, fn, opts);
+		return this;
+	}
+
+	append(...content) {
+		render(...content).appendTo(this.elem);
+		return this;
+	}
+}
+
+export const XMLNS = new Context("http://www.w3.org/1999/xhtml");
+export const e = tag => new Builder(document.createElementNS(XMLNS.get(), tag));
