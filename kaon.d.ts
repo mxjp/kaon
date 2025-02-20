@@ -85,3 +85,48 @@ export class Context<T> {
 	 */
 	static wrap<F extends Fn>(fn: F): F;
 }
+
+export interface Signal<T> {
+	/**
+	 * Access the signal's current value.
+	 */
+	(): T;
+
+	/**
+	 * Update the signal's value & notify observers.
+	 *
+	 * Observers are not notified if the new value is the current value.
+	 *
+	 * @returns The updated value.
+	 */
+	(nextValue: T): T;
+
+	/**
+	 * Manually notify observers.
+	 */
+	notify(): void;
+}
+
+/**
+ * Create a new signal.
+ */
+export function $(): Signal<void>;
+export function $<T>(value: T): Signal<T>;
+
+export type Expression<T> = T | (() => T);
+export type ExpressionResult<T> = T extends Expression<infer R> ? R : never;
+
+/**
+ * Watch the specified expression.
+ */
+export function watch<T>(expr: Expression<T>, callback: (value: T) => void): void;
+
+/**
+ * Run a function while ignoring signal accesses.
+ */
+export function untrack<T>(fn: () => T): T;
+
+/**
+ * Evaluate the specified expression.
+ */
+export function get<T>(expr: Expression<T>): T;

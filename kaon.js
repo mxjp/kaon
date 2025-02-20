@@ -1,6 +1,7 @@
 
 const _LIFECYCLE = [];
 const _CONTEXT = [[]];
+const _ACCESS = [];
 
 const _in = (stack, frame, fn, ...args) => {
 	try {
@@ -16,6 +17,25 @@ const _head = stack => stack[stack.length - 1];
 const _call = fn => fn();
 
 const _dispose = hooks => hooks.toReversed().forEach(_call);
+
+const _unfold = fn => {
+	let depth = 0;
+	return () => {
+		if (depth < 2) {
+			depth++;
+		}
+		if (depth === 1) {
+			try {
+				while (depth > 0) {
+					fn();
+					depth--;
+				}
+			} finally {
+				depth = 0;
+			}
+		}
+	};
+};
 
 export const teardown = hook => void _head(_LIFECYCLE)?.push(hook);
 
@@ -81,3 +101,49 @@ export class Context {
 		return (...args) => Context.window(Context.inject, states, fn, ...args);
 	}
 }
+
+export const $ = value => {
+	const hooks = new Set();
+	const notify = () => {
+		const record = [...hooks];
+		hooks.clear();
+		record.forEach(_call);
+	};
+	const fn = function(next) {
+		if (!arguments.length) {
+			_head(_ACCESS)?.(hooks);
+		} else if (!Object.is(value, next)) {
+			value = next;
+			notify();
+		}
+		return value;
+	};
+	fn.notify = notify;
+	return fn;
+};
+
+export const watch = (expr, cb) => {
+	let value;
+	let dispose;
+	const entry = _unfold(Context.wrap(() => {
+		clear();
+		value = _in(_ACCESS, access, get, expr);
+		dispose?.();
+		dispose = capture(cb, value);
+	}));
+	const signals = [];
+	const clear = () => signals.splice(0).forEach(s => s.delete(entry));
+	const access = hooks => {
+		signals.push(hooks);
+		hooks.add(entry);
+	};
+	teardown(() => {
+		clear();
+		dispose?.();
+	});
+	entry();
+};
+
+export const untrack = fn => _in(_ACCESS, () => {}, fn);
+
+export const get = expr => typeof expr === "function" ? expr() : expr;
