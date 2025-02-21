@@ -22,3 +22,6 @@ jobs:
       - run: npm publish --provenance --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+      - uses: actions/upload-artifact@v4
+        with:
+          path: kaon.*
