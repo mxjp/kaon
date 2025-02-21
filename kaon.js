@@ -1,4 +1,4 @@
-
+const _DOCUMENT = document;
 const _LIFECYCLE = [];
 const _CONTEXT = [[]];
 const _ACCESS = [];
@@ -19,10 +19,7 @@ const _dispose = hooks => hooks.toReversed().forEach(_call);
 const _unfold = fn => {
 	let depth = 0;
 	return () => {
-		if (depth < 2) {
-			depth++;
-		}
-		if (depth === 1) {
+		if (depth < 2 && !depth++) {
 			try {
 				while (depth > 0) {
 					fn();
@@ -107,7 +104,7 @@ export const $ = value => {
 		hooks.clear();
 		record.forEach(_call);
 	};
-	const fn = function(next) {
+	function fn(next) {
 		if (!arguments.length) {
 			_head(_ACCESS)?.(hooks);
 		} else if (!Object.is(value, next)) {
@@ -146,10 +143,10 @@ export const untrack = fn => _in(_ACCESS, () => {}, fn);
 
 export const get = expr => typeof expr === "function" ? expr() : expr;
 
-const _frag = () => document.createDocumentFragment();
-const _empty = () => document.createComment("");
+const _frag = () => _DOCUMENT.createDocumentFragment();
+const _empty = () => _DOCUMENT.createComment("");
 const _text = () => expr => {
-	const text = document.createTextNode("");
+	const text = _DOCUMENT.createTextNode("");
 	watch(expr, v => text.textContent = v ?? "");
 	return text;
 };
@@ -306,7 +303,7 @@ export class Builder extends View {
 
 	set(name, expr) {
 		watch(expr, value => {
-			if (value === null || value === undefined || value === false) {
+			if ((value ?? false) === false) {
 				this.elem.removeAttribute(name);
 			} else {
 				this.elem.setAttribute(name, String(value));
@@ -332,4 +329,4 @@ export class Builder extends View {
 }
 
 export const XMLNS = new Context("http://www.w3.org/1999/xhtml");
-export const e = tag => new Builder(document.createElementNS(XMLNS.get(), tag));
+export const e = tag => new Builder(_DOCUMENT.createElementNS(XMLNS.get(), tag));
