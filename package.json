@@ -4,7 +4,7 @@
 	"version": "0.1.0",
 	"main": "./kaon.js",
 	"scripts": {
-		"minify": "terser --compress --mangle --toplevel --output kaon.min.js -- kaon.js",
+		"minify": "terser --compress --mangle --toplevel --source-map --output kaon.min.js -- kaon.js",
 		"compress": "node scripts/compress.js",
 		"build": "npm run minify && npm run compress"
 	},
