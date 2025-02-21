@@ -13,9 +13,7 @@ const _in = (stack, frame, fn, ...args) => {
 };
 
 const _head = stack => stack[stack.length - 1];
-
 const _call = fn => fn();
-
 const _dispose = hooks => hooks.toReversed().forEach(_call);
 
 const _unfold = fn => {
@@ -149,9 +147,7 @@ export const untrack = fn => _in(_ACCESS, () => {}, fn);
 export const get = expr => typeof expr === "function" ? expr() : expr;
 
 const _frag = () => document.createDocumentFragment();
-
 const _empty = () => document.createComment("");
-
 const _text = () => expr => {
 	const text = document.createTextNode("");
 	watch(expr, v => text.textContent = v ?? "");
@@ -240,7 +236,7 @@ export class View {
 	}
 }
 
-export const nest = (expr, component) => new View((update, self) => {
+export const nest = (expr, component = _call) => new View((update, self) => {
 	watch(expr, value => {
 		const last = self.last;
 		const parent = last?.parentNode;
