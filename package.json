@@ -1,11 +1,12 @@
 {
 	"name": "kaon",
 	"type": "module",
+	"version": "0.1.0",
 	"main": "./kaon.js",
 	"scripts": {
 		"minify": "terser --compress --mangle --toplevel --output kaon.min.js -- kaon.js",
-		"gzip": "node -e \"require('fs').writeFileSync('kaon.min.js.gz', require('zlib').gzipSync(require('fs').readFileSync('kaon.min.js')))\"",
-		"build": "npm run minify && npm run gzip"
+		"compress": "node scripts/compress.js",
+		"build": "npm run minify && npm run compress"
 	},
 	"devDependencies": {
 		"terser": "^5.39.0"
