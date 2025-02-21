@@ -5,6 +5,7 @@ import { brotliCompressSync, gzipSync } from "node:zlib";
 
 const root = join(fileURLToPath(import.meta.url), "../..");
 const minified = await readFile(join(root, "kaon.min.js"));
+console.log(`minified: ${minified.length}`);
 
 const brotli = brotliCompressSync(minified);
 await writeFile(join(root, "kaon.min.js.br"), brotli);
