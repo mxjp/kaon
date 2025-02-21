@@ -1,7 +1,7 @@
 # kaon!
 This is a minimal signal based rendering library primarily meant for websites served from embedded devices.
 
-**This is work in progress.** When feature complete, kaon aims to be under **2KB** when minified & gzipped.
+**This is work in progress.** When feature complete, kaon aims to be under **2KB** when minified & compressed.
 
 ## Planned Features
 + Conditional rendering
