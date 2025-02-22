@@ -78,24 +78,16 @@ export class Context {
 			this.#window = parent;
 		}
 	}
-
-	static window(fn, ...args) {
-		return _in(_CONTEXT, [], fn, ...args);
-	}
-
-	static inject([state, ...rest], fn, ...args) {
-		return state ? state[0].inject(state[1], Context.inject, rest, fn, ...args) : fn(...args);
-	}
-
-	static capture() {
-		return _head(_CONTEXT).map(c => [c, c.get()]);
-	}
-
-	static wrap(fn) {
-		const states = Context.capture();
-		return (...args) => Context.window(Context.inject, states, fn, ...args);
-	}
 }
+
+export const inject = ([state, ...rest], fn, ...args) => {
+	return state ? state[0].inject(state[1], inject, rest, fn, ...args) : fn(...args);
+};
+
+export const wrap = fn => {
+	const states = _head(_CONTEXT).map(c => [c, c.get()]);
+	return (...args) => _in(_CONTEXT, [], inject, states, fn, ...args);
+};
 
 export const $ = value => {
 	const hooks = new Set();
@@ -120,7 +112,7 @@ export const $ = value => {
 export const watch = (expr, cb) => {
 	let value;
 	let dispose;
-	const entry = _unfold(Context.wrap(() => {
+	const entry = _unfold(wrap(() => {
 		clear();
 		value = _in(_ACCESS, access, get, expr);
 		dispose?.();

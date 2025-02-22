@@ -64,27 +64,17 @@ export class Context<T> {
 	 * @param fn The function to run.
 	 */
 	inject<F extends Fn>(value: T | null | undefined, fn: F, ...args: Parameters<F>): ReturnType<F>;
-
-	/**
-	 * Run a function in a new context window without any injected value.
-	 */
-	static window<F extends Fn>(fn: F, ...args: Parameters<F>): ReturnType<F>;
-
-	/**
-	 * Run a function while injecting into multiple contexts.
-	 */
-	static inject<F extends Fn>(states: ContextState<unknown>[], fn: F, ...args: Parameters<F>): ReturnType<F>;
-
-	/**
-	 * Capture all current context states.
-	 */
-	static capture(): ContextState<unknown>[];
-
-	/**
-	 * Wrap a function to always run in the current context.
-	 */
-	static wrap<F extends Fn>(fn: F): F;
 }
+
+/**
+ * Run a function while injecting into multiple contexts.
+ */
+export function inject<F extends Fn>(states: ContextState<unknown>[], fn: F, ...args: Parameters<F>): ReturnType<F>;
+
+/**
+ * Wrap a function to always run in the current context.
+ */
+export function wrap<F extends Fn>(fn: F): F;
 
 export interface Signal<T> {
 	/**
