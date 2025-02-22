@@ -146,7 +146,7 @@ export class View {
 	/**
 	 * Set the owner of this view until the current lifecycle is disposed.
 	 */
-	setOwner(owner: ViewUpdateFn): void;
+	own(owner: ViewUpdateFn): void;
 
 	/**
 	 * Append all nodes of this view to the specified parent.

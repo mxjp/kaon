@@ -143,11 +143,11 @@ export const render = (...content) => new View((update, self) => {
 		} else if (part instanceof View) {
 			part.appendTo(parent);
 			if (content.length === 1) {
-				part.setOwner(update);
+				part.own(update);
 			} else if (i === 0) {
-				part.setOwner((n, _) => update(n, self.last));
+				part.own((n, _) => update(n, self.last));
 			} else if (i === content.length - 1) {
-				part.setOwner((_, n) => update(self.first, n));
+				part.own((_, n) => update(self.first, n));
 			}
 		} else {
 			parent.appendChild(_text(part));
@@ -167,7 +167,7 @@ export class View {
 		}, this);
 	}
 
-	setOwner(owner) {
+	own(owner) {
 		this.#owner = owner;
 		teardown(() => this.#owner = undefined);
 	}
@@ -230,7 +230,7 @@ export const nest = (expr, component = _call) => new View((update, self) => {
 			}
 		}
 		update(view.first, view.last);
-		view.setOwner(update);
+		view.own(update);
 	});
 });
 
