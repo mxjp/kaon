@@ -1,9 +1,9 @@
-const _DOCUMENT = document;
-const _LIFECYCLE = [];
-const _CONTEXT = [[]];
-const _ACCESS = [];
+let _DOCUMENT = document;
+let _LIFECYCLE = [];
+let _CONTEXT = [[]];
+let _ACCESS = [];
 
-const _in = (stack, frame, fn, ...args) => {
+let _in = (stack, frame, fn, ...args) => {
 	try {
 		stack.push(frame);
 		return fn(...args);
@@ -12,11 +12,11 @@ const _in = (stack, frame, fn, ...args) => {
 	}
 };
 
-const _head = stack => stack[stack.length - 1];
-const _call = fn => fn();
-const _dispose = hooks => hooks.toReversed().forEach(_call);
+let _head = stack => stack[stack.length - 1];
+let _call = fn => fn();
+let _dispose = hooks => hooks.toReversed().forEach(_call);
 
-const _unfold = fn => {
+let _unfold = fn => {
 	let depth = 0;
 	return () => {
 		if (depth < 2 && !depth++) {
@@ -35,7 +35,7 @@ const _unfold = fn => {
 export const teardown = hook => void _head(_LIFECYCLE)?.push(hook);
 
 export const capture = (fn, ...args) => {
-	const hooks = [];
+	let hooks = [];
 	try {
 		_in(_LIFECYCLE, hooks, fn, ...args);
 	} catch (e) {
@@ -64,7 +64,7 @@ export class Context {
 	}
 
 	inject(value, fn, ...args) {
-		const window = _head(_CONTEXT);
+		let window = _head(_CONTEXT);
 		return _in(this.#window, _CONTEXT.length, _in, window, this, _in, this.#stack, value, fn, ...args);
 	}
 }
@@ -74,14 +74,14 @@ export const inject = ([state, ...rest], fn, ...args) => {
 };
 
 export const wrap = fn => {
-	const states = _head(_CONTEXT).map(c => [c, c.get()]);
+	let states = _head(_CONTEXT).map(c => [c, c.get()]);
 	return (...args) => _in(_CONTEXT, [], inject, states, fn, ...args);
 };
 
 export const $ = value => {
-	const hooks = new Set();
-	const notify = () => {
-		const record = [...hooks];
+	let hooks = new Set();
+	let notify = () => {
+		let record = [...hooks];
 		hooks.clear();
 		record.forEach(_call);
 	};
@@ -101,15 +101,15 @@ export const $ = value => {
 export const watch = (expr, cb) => {
 	let value;
 	let dispose;
-	const entry = _unfold(wrap(() => {
+	let entry = _unfold(wrap(() => {
 		clear();
 		value = _in(_ACCESS, access, get, expr);
 		dispose?.();
 		dispose = capture(cb, value);
 	}));
-	const signals = [];
-	const clear = () => signals.splice(0).forEach(s => s.delete(entry));
-	const access = hooks => {
+	let signals = [];
+	let clear = () => signals.splice(0).forEach(s => s.delete(entry));
+	let access = hooks => {
 		signals.push(hooks);
 		hooks.add(entry);
 	};
@@ -124,20 +124,20 @@ export const untrack = fn => _in(_ACCESS, () => {}, fn);
 
 export const get = expr => typeof expr === "function" ? expr() : expr;
 
-const _frag = () => _DOCUMENT.createDocumentFragment();
-const _empty = () => _DOCUMENT.createComment("");
-const _text = () => expr => {
-	const text = _DOCUMENT.createTextNode("");
+let _frag = () => _DOCUMENT.createDocumentFragment();
+let _empty = () => _DOCUMENT.createComment("");
+let _text = () => expr => {
+	let text = _DOCUMENT.createTextNode("");
 	watch(expr, v => text.textContent = v ?? "");
 	return text;
 };
 
 export const render = (...content) => new View((update, self) => {
 	content = content.flat(Infinity);
-	const empty = _empty();
-	const parent = _frag();
+	let empty = _empty();
+	let parent = _frag();
 	for (let i = 0; i < content.length; i++) {
-		const part = content[i];
+		let part = content[i];
 		if (part instanceof Node) {
 			parent.appendChild(part);
 		} else if (part instanceof View) {
@@ -175,7 +175,7 @@ export class View {
 	appendTo(parent) {
 		let { first, last } = this;
 		for (;;) {
-			const next = first.nextSibling;
+			let next = first.nextSibling;
 			parent.appendChild(first);
 			if (first === last) break;
 			first = next;
@@ -185,7 +185,7 @@ export class View {
 	insertBefore(parent, ref) {
 		let { first, last } = this;
 		for (;;) {
-			const next = first.nextSibling;
+			let next = first.nextSibling;
 			parent.insertBefore(first, ref);
 			if (first === last) break;
 			first = next;
@@ -193,7 +193,7 @@ export class View {
 	}
 
 	insertAfter(parent, ref) {
-		const next = ref.nextSibling;
+		let next = ref.nextSibling;
 		if (next) {
 			this.insertBefore(parent, next);
 		} else {
@@ -202,12 +202,12 @@ export class View {
 	}
 
 	detach() {
-		const { first, last } = this;
+		let { first, last } = this;
 		if (first === last) {
 			first.parentNode?.removeChild(first);
 			return first;
 		} else {
-			const frag = _frag();
+			let frag = _frag();
 			this.appendTo(frag);
 			return frag;
 		}
@@ -216,11 +216,11 @@ export class View {
 
 export const nest = (expr, component = _call) => new View((update, self) => {
 	watch(expr, value => {
-		const last = self.last;
-		const parent = last?.parentNode;
+		let last = self.last;
+		let parent = last?.parentNode;
 		let view;
 		if (parent) {
-			const anchor = last.nextSibling;
+			let anchor = last.nextSibling;
 			self.detach();
 			view = render(component(value));
 			if (anchor) {
@@ -236,8 +236,8 @@ export const nest = (expr, component = _call) => new View((update, self) => {
 
 export const iter = (expr, component) => new View(update => {
 	let cycle = 0;
-	const first = _empty();
-	const instances = new Map();
+	let first = _empty();
+	let instances = new Map();
 	teardown(() => instances.forEach(v => v.d()));
 	watch(expr, values => {
 		cycle++;
@@ -247,7 +247,7 @@ export const iter = (expr, component) => new View(update => {
 		if (!parent) {
 			(parent = _frag()).appendChild(first);
 		}
-		for (const value of values) {
+		for (let value of values) {
 			let instance = instances.get(value);
 			if (!instance) {
 				instance = { c: cycle, i: $(index) };
@@ -265,7 +265,7 @@ export const iter = (expr, component) => new View(update => {
 			last = instance.v.last;
 			index++;
 		}
-		for (const [value, instance] of instances) {
+		for (let [value, instance] of instances) {
 			if (instance.c !== cycle) {
 				instances.delete(value);
 				instance.d();
