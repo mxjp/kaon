@@ -1,7 +1,7 @@
 // @ts-check
 import { deepStrictEqual, strictEqual, throws } from "node:assert";
 import { suite, test } from "node:test";
-import { $, capture, Context, e, inject, iter, nest, render, teardown, untrack, View, watch, wrap } from "./kaon.js";
+import { $, capture, Context, e, inject, iter, nest, render, teardown, untrack, View, watch, wrap, XMLNS } from "./kaon.js";
 
 await suite("lifecycle", async () => {
 	await test("basic usage", () => {
@@ -449,6 +449,67 @@ await test("iter", async () => {
 	dispose();
 	// This is currently intentional:
 	assertUnorderedEvents(events, ["-2", "-1", "-5", "-3"]);
+});
+
+await suite("builder", async () => {
+	await test("namespace", () => {
+		strictEqual(e("div").elem instanceof window.HTMLElement, true);
+		XMLNS.inject("http://www.w3.org/2000/svg", () => {
+			strictEqual(e("div").elem instanceof window.SVGElement, true);
+		});
+	});
+
+	await test("set", () => {
+		/** @type {import("./kaon.js").Signal<any>} */
+		const signal = $(0);
+		const elem = e("div")
+			.set("foo", signal)
+			.set("bar", "baz")
+			.elem;
+
+		strictEqual(elem.getAttribute("foo"), "0");
+		strictEqual(elem.getAttribute("bar"), "baz");
+
+		signal(1);
+		strictEqual(elem.getAttribute("foo"), "1");
+
+		signal(undefined);
+		strictEqual(elem.hasAttribute("foo"), false);
+
+		signal(null);
+		strictEqual(elem.hasAttribute("foo"), false);
+
+		signal(false);
+		strictEqual(elem.hasAttribute("foo"), false);
+	});
+
+	await test("prop", () => {
+		const signal = $("foo");
+		const elem = e("div").prop("title", signal).elem;
+		strictEqual(elem.title, "foo");
+		signal("bar");
+		strictEqual(elem.title, "bar");
+	});
+
+	await test("on", () => {
+		const events = [];
+		const elem = e("div").on("test-event", e => {
+			events.push(e);
+		}, { once: true }).elem;
+		elem.dispatchEvent(new window.CustomEvent("test-event"));
+		strictEqual(events.length, 1);
+		strictEqual(events[0] instanceof window.CustomEvent, true);
+		elem.dispatchEvent(new window.CustomEvent("test-event"));
+		strictEqual(events.length, 1);
+	});
+
+	await test("append", () => {
+		const signal = $(0);
+		const elem = e("div").append("foo", signal).elem;
+		strictEqual(elem.textContent, "foo0");
+		signal(1);
+		strictEqual(elem.textContent, "foo1");
+	});
 });
 
 /**
