@@ -47,14 +47,14 @@ export const capture = (fn, ...args) => {
 
 export class Context {
 	#stack = [];
-	#window = 0;
+	#window = [0];
 
 	constructor(value) {
 		this.default = value;
 	}
 
 	get() {
-		return this.#window === _CONTEXT.length
+		return _head(this.#window) === _CONTEXT.length
 			? _head(this.#stack) ?? this.default
 			: this.default;
 	}
@@ -65,18 +65,7 @@ export class Context {
 
 	inject(value, fn, ...args) {
 		const window = _head(_CONTEXT);
-		const parent = this.#window;
-		const stack = this.#stack;
-		try {
-			this.#window = _CONTEXT.length;
-			window.push(this);
-			stack.push(value);
-			return fn(...args);
-		} finally {
-			stack.pop();
-			window.pop();
-			this.#window = parent;
-		}
+		return _in(this.#window, _CONTEXT.length, _in, window, this, _in, this.#stack, value, fn, ...args);
 	}
 }
 
