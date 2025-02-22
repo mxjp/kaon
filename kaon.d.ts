@@ -144,6 +144,16 @@ export class View {
 	constructor(init: ViewInit);
 
 	/**
+	 * The current first node.
+	 */
+	get first(): Node;
+
+	/**
+	 * The current last node.
+	 */
+	get last(): Node;
+
+	/**
 	 * Set the owner of this view until the current lifecycle is disposed.
 	 */
 	own(owner: ViewUpdateFn): void;
@@ -163,6 +173,11 @@ export class View {
 	 */
 	detach(): DocumentFragment;
 }
+
+/**
+ * Create a view from arbitrary content.
+ */
+export function render(...content: unknown[]): View;
 
 /**
  * Watch an expression and render content from it's result.

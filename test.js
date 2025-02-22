@@ -1,7 +1,8 @@
 // @ts-check
 import { deepStrictEqual, strictEqual, throws } from "node:assert";
 import { suite, test } from "node:test";
-import { $, capture, Context, inject, teardown, untrack, watch, wrap } from "./kaon.js";
+import { $, capture, Context, e, inject, nest, teardown, untrack, View, watch, wrap } from "./kaon.js";
+import { render } from "./kaon.js";
 
 await suite("lifecycle", async () => {
 	await test("basic usage", () => {
@@ -205,6 +206,90 @@ await suite("signals", async () => {
 	});
 });
 
+await suite("render", async () => {
+	await test("empty", () => {
+		strictEqual(viewText(render()), "");
+		strictEqual(viewText(render([])), "");
+		strictEqual(viewText(render(null)), "");
+		strictEqual(viewText(render([null, [undefined], []])), "");
+
+		const view = render();
+		strictEqual(view.first, view.last);
+		strictEqual(view.first.nodeType, Node.COMMENT_NODE);
+	});
+
+	await test("static text", () => {
+		strictEqual(viewText(render("test")), "test");
+		strictEqual(viewText(render(() => "test")), "test");
+		strictEqual(viewText(render(42)), "42");
+		strictEqual(viewText(render(false)), "false");
+	});
+
+	await test("signal", () => {
+		const count = $(0);
+		const view = render(count);
+		strictEqual(viewText(view), "0");
+		count(1);
+		strictEqual(viewText(view), "1");
+	});
+
+	await test("node", () => {
+		strictEqual(viewText(render(e("div").append("test").elem)), "test");
+	});
+
+	await test("static view", () => {
+		strictEqual(viewText(render(e("div").append("test"))), "test");
+	});
+
+	await test("single dynamic view", () => {
+		const events = [];
+		const count = $(0);
+		const view = render(nest(count, value => value));
+		view.own((first, last) => events.push([first.textContent, last.textContent]));
+		strictEqual(viewText(view), "0");
+		assertEvents(events, []);
+		count(1);
+		strictEqual(viewText(view), "1");
+		assertEvents(events, [["1", "1"]]);
+	});
+
+	await test("first dynamic view", () => {
+		const events = [];
+		const count = $(0);
+		const view = render(nest(count, value => value), "a", "b");
+		view.own((first, last) => events.push([first.textContent, last.textContent]));
+		strictEqual(viewText(view), "0ab");
+		assertEvents(events, []);
+		count(1);
+		strictEqual(viewText(view), "1ab");
+		assertEvents(events, [["1", "b"]]);
+	});
+
+	await test("last dynamic view", () => {
+		const events = [];
+		const count = $(0);
+		const view = render("a", "b", nest(count, value => value));
+		view.own((first, last) => events.push([first.textContent, last.textContent]));
+		strictEqual(viewText(view), "ab0");
+		assertEvents(events, []);
+		count(1);
+		strictEqual(viewText(view), "ab1");
+		assertEvents(events, [["a", "1"]]);
+	});
+
+	await test("middle dynamic view", () => {
+		const events = [];
+		const count = $(0);
+		const view = render("a", nest(count, value => value), "b");
+		view.own((first, last) => events.push([first.textContent, last.textContent]));
+		strictEqual(viewText(view), "a0b");
+		assertEvents(events, []);
+		count(1);
+		strictEqual(viewText(view), "a1b");
+		assertEvents(events, []);
+	});
+});
+
 /**
  * @param {unknown[]} events
  * @param {unknown[]} expected
@@ -212,4 +297,26 @@ await suite("signals", async () => {
 function assertEvents(events, expected) {
 	deepStrictEqual(events, expected);
 	events.length = 0;
+}
+
+/**
+ * @param {View} view
+ */
+function viewText(view) {
+	let { first: node, last } = view;
+	let text = "";
+	for (;;) {
+		if (node.nodeType !== Node.COMMENT_NODE) {
+			text += node.textContent;
+		}
+		if (node === last) {
+			break;
+		}
+		const next = node.nextSibling;
+		if (!next) {
+			throw new Error("invalid view sequence");
+		}
+		node = next;
+	}
+	return text;
 }

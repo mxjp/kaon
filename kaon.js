@@ -126,11 +126,6 @@ export const get = expr => typeof expr === "function" ? expr() : expr;
 
 let _frag = () => _DOCUMENT.createDocumentFragment();
 let _empty = () => _DOCUMENT.createComment("");
-let _text = () => expr => {
-	let text = _DOCUMENT.createTextNode("");
-	watch(expr, v => text.textContent = v ?? "");
-	return text;
-};
 
 export const render = (...content) => new View((update, self) => {
 	content = content.flat(Infinity);
@@ -150,7 +145,9 @@ export const render = (...content) => new View((update, self) => {
 				part.own((_, n) => update(self.first, n));
 			}
 		} else {
-			parent.appendChild(_text(part));
+			const text = _DOCUMENT.createTextNode("");
+			watch(part, v => text.textContent = v ?? "");
+			parent.appendChild(text);
 		}
 	}
 	update(parent.firstChild ?? empty, parent.lastChild ?? empty);
@@ -203,6 +200,8 @@ export const nest = (expr, component = _call) => new View((update, self) => {
 			self.detach();
 			view = render(component(value));
 			view.attach(parent, anchor);
+		} else {
+			view = render(component(value));
 		}
 		update(view.first, view.last);
 		view.own(update);
