@@ -1,7 +1,7 @@
 // @ts-check
 import { deepStrictEqual, strictEqual, throws } from "node:assert";
 import { suite, test } from "node:test";
-import { capture, Context, inject, teardown, wrap } from "./kaon.js";
+import { $, capture, Context, inject, teardown, untrack, watch, wrap } from "./kaon.js";
 
 await suite("lifecycle", async () => {
 	await test("basic usage", () => {
@@ -117,6 +117,91 @@ await suite("context", async () => {
 			deepStrictEqual(fns[0](), [3, 4]);
 			deepStrictEqual(fns[1](), [3, 5]);
 		});
+	});
+});
+
+await suite("signals", async () => {
+	await test("inert usage", () => {
+		const count = $(0);
+		strictEqual(count(), 0);
+		count(1);
+		strictEqual(count(), 1);
+		strictEqual(count(count() + 1), 2);
+		strictEqual(count(), 2);
+		count.notify();
+		strictEqual(count(), 2);
+	});
+
+	await test("watch usage", () => {
+		const events = [];
+		const count = $(0);
+		const dispose = capture(() => {
+			watch(count, value => events.push(value));
+		});
+		assertEvents(events, [0]);
+		count(1);
+		assertEvents(events, [1]);
+		count(1);
+		assertEvents(events, []);
+		count(2);
+		assertEvents(events, [2]);
+		dispose();
+		count(3);
+		assertEvents(events, []);
+		strictEqual(count(), 3);
+		dispose();
+		count(4);
+		assertEvents(events, []);
+		strictEqual(count(), 4);
+	});
+
+	await test("watch unfolding", () => {
+		const events = [];
+		const count = $(0);
+		watch(count, value => {
+			events.push(value);
+			if (value < 3) {
+				count(count() + 1);
+				events.push("u");
+			}
+		});
+		strictEqual(count(), 3);
+		assertEvents(events, [0, "u", 1, "u", 2, "u", 3]);
+	});
+
+	await test("context", () => {
+		const events = [];
+		const ctx = new Context(7);
+		const count = $(0);
+		ctx.inject(11, () => {
+			watch(() => {
+				return count() + ctx.get();
+			}, value => {
+				strictEqual(count() + ctx.get(), value);
+				events.push(value);
+			});
+		});
+		assertEvents(events, [11]);
+		count(1);
+		assertEvents(events, [12]);
+		ctx.inject(77, () => {
+			count(2);
+			assertEvents(events, [13]);
+		});
+	});
+
+	await test("untrack", () => {
+		const events = [];
+		const a = $(0);
+		const b = $(1);
+		watch(() => [a(), untrack(b)], v => events.push(v));
+		assertEvents(events, [[0, 1]]);
+		a(2);
+		assertEvents(events, [[2, 1]]);
+		b(3);
+		assertEvents(events, []);
+		a(4);
+		assertEvents(events, [[4, 3]]);
 	});
 });
 
