@@ -141,7 +141,7 @@ export const render = (...content) => new View((update, self) => {
 		if (part instanceof Node) {
 			parent.appendChild(part);
 		} else if (part instanceof View) {
-			part.appendTo(parent);
+			part.attach(parent);
 			if (content.length === 1) {
 				part.own(update);
 			} else if (i === 0) {
@@ -172,45 +172,24 @@ export class View {
 		teardown(() => this.#owner = undefined);
 	}
 
-	appendTo(parent) {
+	attach(parent, before) {
 		let { first, last } = this;
 		for (;;) {
 			let next = first.nextSibling;
-			parent.appendChild(first);
+			if (before) {
+				parent.insertBefore(first, before);
+			} else {
+				parent.appendChild(first);
+			}
 			if (first === last) break;
 			first = next;
-		}
-	}
-
-	insertBefore(parent, ref) {
-		let { first, last } = this;
-		for (;;) {
-			let next = first.nextSibling;
-			parent.insertBefore(first, ref);
-			if (first === last) break;
-			first = next;
-		}
-	}
-
-	insertAfter(parent, ref) {
-		let next = ref.nextSibling;
-		if (next) {
-			this.insertBefore(parent, next);
-		} else {
-			this.appendTo(parent);
 		}
 	}
 
 	detach() {
-		let { first, last } = this;
-		if (first === last) {
-			first.parentNode?.removeChild(first);
-			return first;
-		} else {
-			let frag = _frag();
-			this.appendTo(frag);
-			return frag;
-		}
+		let frag = _frag();
+		this.attach(frag);
+		return frag;
 	}
 }
 
@@ -223,11 +202,7 @@ export const nest = (expr, component = _call) => new View((update, self) => {
 			let anchor = last.nextSibling;
 			self.detach();
 			view = render(component(value));
-			if (anchor) {
-				view.insertBefore(parent, anchor);
-			} else {
-				view.appendTo(parent);
-			}
+			view.attach(parent, anchor);
 		}
 		update(view.first, view.last);
 		view.own(update);
@@ -259,8 +234,9 @@ export const iter = (expr, component) => new View(update => {
 				instance.c = cycle;
 				instance.i(index);
 			}
-			if (last.nextSibling !== instance.v.first) {
-				instance.v.insertAfter(parent, last);
+			let next = last.nextSibling;
+			if (next !== instance.v.first) {
+				instance.v.attach(parent, next);
 			}
 			last = instance.v.last;
 			index++;
@@ -304,7 +280,7 @@ export class Builder extends View {
 	}
 
 	append(...content) {
-		render(...content).appendTo(this.elem);
+		render(...content).attach(this.elem);
 		return this;
 	}
 }

@@ -149,24 +149,19 @@ export class View {
 	own(owner: ViewUpdateFn): void;
 
 	/**
-	 * Append all nodes of this view to the specified parent.
+	 * Add all nodes of this view to the specified parent.
+	 *
+	 * @param parent The parent to add nodes to.
+	 * @param before If specified nodes are inserted before this node and appended otherwise.
 	 */
-	appendTo(parent: Node): void;
+	attach(parent: Node, before?: Node | null): void;
 
 	/**
-	 * Insert all nodes of this view before a reference child of the specified parent.
+	 * Detach all nodes of this view from the current parent.
+	 *
+	 * @returns A document fragment containing all removed nodes.
 	 */
-	insertBefore(parent: Node, ref: Node): void;
-
-	/**
-	 * Insert all nodes of this view after a reference child of the specified parent.
-	 */
-	insertAfter(parent: Node, ref: Node): void;
-
-	/**
-	 * Detach all nodes of this view from the current parent if there is one.
-	 */
-	detach(): Node;
+	detach(): DocumentFragment;
 }
 
 /**
