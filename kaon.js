@@ -190,7 +190,7 @@ export class View {
 	}
 }
 
-export const nest = (expr, component = _call) => new View((update, self) => {
+export const nest = (expr, component = fn => fn?.()) => new View((update, self) => {
 	watch(expr, value => {
 		let last = self.last;
 		let parent = last?.parentNode;

@@ -1,8 +1,7 @@
 // @ts-check
 import { deepStrictEqual, strictEqual, throws } from "node:assert";
 import { suite, test } from "node:test";
-import { $, capture, Context, e, inject, nest, teardown, untrack, View, watch, wrap } from "./kaon.js";
-import { render } from "./kaon.js";
+import { $, capture, Context, e, inject, iter, nest, render, teardown, untrack, View, watch, wrap } from "./kaon.js";
 
 await suite("lifecycle", async () => {
 	await test("basic usage", () => {
@@ -290,6 +289,168 @@ await suite("render", async () => {
 	});
 });
 
+await suite("nest", async () => {
+	await test("basic usage", async () => {
+		const events = [];
+		const count = $(0);
+		const view = nest(count, value => {
+			events.push(`+${value}`);
+			teardown(() => events.push(`-${value}`));
+			return value;
+		});
+		textBoundaryEvents(view, events);
+		strictEqual(viewText(view), "0");
+		assertEvents(events, ["+0"]);
+		count(count() + 1);
+		strictEqual(viewText(view), "1");
+		assertEvents(events, ["-0", "+1", "1"]);
+	});
+
+	await test("inner boundary updates", async () => {
+		const events = [];
+		const count = $(0);
+		const access = $();
+
+		let view;
+		const dispose = capture(() => {
+			view = nest(access, () => {
+				events.push("+");
+				teardown(() => events.push("-"));
+				return nest(count, c => c);
+			});
+		});
+		assertEvents(events, ["+"]);
+		// @ts-ignore
+		textBoundaryEvents(view, events);
+		count(count() + 1);
+		assertEvents(events, ["1"]);
+		count(count() + 1);
+		assertEvents(events, ["2"]);
+		access.notify();
+		assertEvents(events, ["-", "+", "2"]);
+		count(count() + 1);
+		assertEvents(events, ["3"]);
+		dispose();
+		assertEvents(events, ["-"]);
+		count(count() + 1);
+		access.notify();
+		assertEvents(events, []);
+	});
+
+	await test("omit component", async () => {
+		const events = [];
+		/** @type {import("./kaon.js").Signal<any>} */
+		const comp = $();
+		const view = nest(comp);
+		strictEqual(viewText(view), "");
+		comp(() => {
+			events.push("+a");
+			teardown(() => events.push("-a"));
+			return "a";
+		});
+		strictEqual(viewText(view), "a");
+		assertEvents(events, ["+a"]);
+		comp(null);
+		strictEqual(viewText(view), "");
+		assertEvents(events, ["-a"]);
+	});
+
+	await test("update leading", async () => {
+		const count = $(0);
+		const view = nest(count, c => c);
+		const parent = render(view, "a", "b");
+		strictEqual(viewText(parent), "0ab");
+		count(count() + 1);
+		strictEqual(viewText(parent), "1ab");
+	});
+
+	await test("update middle", async () => {
+		const count = $(0);
+		const view = nest(count, c => c);
+		const parent = render("a", view, "b");
+		strictEqual(viewText(parent), "a0b");
+		count(count() + 1);
+		strictEqual(viewText(parent), "a1b");
+	});
+
+	await test("update trailing", async () => {
+		const count = $(0);
+		const view = nest(count, c => c);
+		const parent = render("a", "b", view);
+		strictEqual(viewText(parent), "ab0");
+		count(count() + 1);
+		strictEqual(viewText(parent), "ab1");
+	});
+});
+
+await test("iter", async () => {
+	const events = [];
+	const items = $([1, 2, 3, 4, 5]);
+	let view;
+	const dispose = capture(() => {
+		view = iter(items, value => {
+			events.push(`+${value}`);
+			teardown(() => events.push(`-${value}`));
+			return value;
+		});
+	});
+	if (!view) throw new Error();
+	strictEqual(viewText(view), "12345");
+	assertUnorderedEvents(events, ["+1", "+2", "+3", "+4", "+5"]);
+
+	items([2, 4]);
+	strictEqual(viewText(view), "24");
+	assertUnorderedEvents(events, ["-1", "-3", "-5"]);
+
+	items([1, 4, 3, 2, 5]);
+	strictEqual(viewText(view), "14325");
+	assertUnorderedEvents(events, ["+1", "+3", "+5"]);
+
+	items([]);
+	strictEqual(viewText(view), "");
+	assertUnorderedEvents(events, ["-2", "-4", "-1", "-3", "-5"]);
+
+	items([1, 2, 3, 4, 5]);
+	strictEqual(viewText(view), "12345");
+	assertUnorderedEvents(events, ["+1", "+2", "+3", "+4", "+5"]);
+
+	items([5, 3, 1]);
+	strictEqual(viewText(view), "531");
+	assertUnorderedEvents(events, ["-2", "-4"]);
+
+	items([2, 4]);
+	strictEqual(viewText(view), "24");
+	assertUnorderedEvents(events, ["+2", "+4", "-1", "-3", "-5"]);
+
+	items([1, 2, 3, 4, 5, 6, 7]);
+	strictEqual(viewText(view), "1234567");
+	assertUnorderedEvents(events, ["+1", "+3", "+5", "+6", "+7"]);
+
+	items([2, 9, 10, 7, 8, 1, 5]);
+	strictEqual(viewText(view), "29107815");
+	assertUnorderedEvents(events, ["+9", "+10", "+8", "-4", "-3", "-6"]);
+
+	items([2, 2, 1, 1, 5, 5]);
+	strictEqual(viewText(view), "215");
+	assertUnorderedEvents(events, ["-7", "-9", "-10", "-8"]);
+
+	items([2, 1, 5, 3, 2, 1, 3, 5, 2, 5, 1]);
+	strictEqual(viewText(view), "3251");
+	assertUnorderedEvents(events, ["+3"]);
+
+	items([3, 5, 1, 2]);
+	strictEqual(viewText(view), "3512");
+	assertUnorderedEvents(events, []);
+
+	dispose();
+	strictEqual(viewText(view), "3512");
+	assertUnorderedEvents(events, ["-2", "-1", "-5", "-3"]);
+
+	dispose();
+	// This is currently intentional:
+	assertUnorderedEvents(events, ["-2", "-1", "-5", "-3"]);
+});
+
 /**
  * @param {unknown[]} events
  * @param {unknown[]} expected
@@ -297,6 +458,24 @@ await suite("render", async () => {
 function assertEvents(events, expected) {
 	deepStrictEqual(events, expected);
 	events.length = 0;
+}
+
+/**
+ * @param {unknown[]} events
+ * @param {unknown[]} expected
+ */
+function assertUnorderedEvents(events, expected) {
+	assertEvents(events.sort(), expected.sort());
+}
+
+/**
+ * @param {View} view
+ * @param {unknown[]} events
+ */
+function textBoundaryEvents(view, events) {
+	view.own(() => {
+		events.push(viewText(view));
+	});
 }
 
 /**
