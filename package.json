@@ -12,9 +12,11 @@
 		"minify": "terser --compress --mangle --toplevel --source-map --output kaon.min.js -- kaon.js",
 		"compress": "node scripts/compress.js",
 		"build": "npm run minify && npm run compress",
-		"prepack": "npm run build && node scripts/prepack.js"
+		"test": "node --import=./test-env.js --test ./test.js",
+		"prepack": "npm run build && npm test && node scripts/prepack.js"
 	},
 	"devDependencies": {
+		"jsdom": "^26.0.0",
 		"terser": "^5.39.0"
 	}
 }
