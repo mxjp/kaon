@@ -1,13 +1,25 @@
 {
 	"name": "kaon",
+	"description": "Minimal signal based rendering library for embedded applications",
 	"version": "0.1.3",
 	"homepage": "https://mxjp.github.io/kaon",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/mxjp/kaon"
 	},
+	"keywords": [
+		"context",
+		"embedded",
+		"lifecycle",
+		"reactive",
+		"signals",
+		"small",
+		"synchronous",
+		"tiny"
+	],
 	"type": "module",
 	"main": "./kaon.js",
+	"sideEffects": false,
 	"scripts": {
 		"minify": "terser --compress --mangle --toplevel --source-map --output kaon.min.js -- kaon.js",
 		"compress": "node scripts/compress.js",
