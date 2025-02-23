@@ -21,7 +21,7 @@
 	"main": "./kaon.js",
 	"sideEffects": false,
 	"scripts": {
-		"minify": "terser --compress --mangle --toplevel --source-map --output kaon.min.js -- kaon.js",
+		"minify": "terser --compress --mangle --format wrap_func_args=false --toplevel --source-map --output kaon.min.js -- kaon.js",
 		"compress": "node scripts/compress.js",
 		"build": "npm run minify && npm run compress",
 		"test": "node --import=./test-env.js --test ./test.js",
