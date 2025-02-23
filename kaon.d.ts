@@ -159,19 +159,13 @@ export class View {
 	own(owner: ViewUpdateFn): void;
 
 	/**
-	 * Add all nodes of this view to the specified parent.
+	 * Move all nodes of this view into a new parent node.
 	 *
-	 * @param parent The parent to add nodes to.
+	 * @param parent The parent node to move into. Default is a new document fragment.
 	 * @param before If specified nodes are inserted before this node and appended otherwise.
+	 * @returns The parent node.
 	 */
-	attach(parent: Node, before?: Node | null): void;
-
-	/**
-	 * Detach all nodes of this view from the current parent.
-	 *
-	 * @returns A document fragment containing all removed nodes.
-	 */
-	detach(): DocumentFragment;
+	move(parent?: Node, before?: Node | null): Node;
 }
 
 /**

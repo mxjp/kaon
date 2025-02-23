@@ -40,5 +40,5 @@ render(
       }).append("Remove"),
     )),
   ),
-).attach(document.body);
+).move(document.body);
 ```

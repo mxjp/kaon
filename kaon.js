@@ -135,7 +135,7 @@ export const render = (...content) => new View((update, self) => {
 		if (part instanceof Node) {
 			parent.appendChild(part);
 		} else if (part instanceof View) {
-			part.attach(parent);
+			part.move(parent);
 			if (content.length === 1) {
 				part.own(update);
 			} else if (i === 0) {
@@ -168,7 +168,7 @@ export class View {
 		teardown(() => this.#owner = undefined);
 	}
 
-	attach(parent, before) {
+	move(parent = _frag(), before) {
 		let { first, last } = this;
 		for (;;) {
 			let next = first.nextSibling;
@@ -180,12 +180,7 @@ export class View {
 			if (first === last) break;
 			first = next;
 		}
-	}
-
-	detach() {
-		let frag = _frag();
-		this.attach(frag);
-		return frag;
+		return parent;
 	}
 }
 
@@ -196,9 +191,9 @@ export const nest = (expr, component = fn => fn?.()) => new View((update, self) 
 		let view;
 		if (parent) {
 			let anchor = last.nextSibling;
-			self.detach();
+			self.move();
 			view = render(component(value));
-			view.attach(parent, anchor);
+			view.move(parent, anchor);
 		} else {
 			view = render(component(value));
 		}
@@ -234,7 +229,7 @@ export const iter = (expr, component) => new View(update => {
 			}
 			let next = last.nextSibling;
 			if (next !== instance.v.first) {
-				instance.v.attach(parent, next);
+				instance.v.move(parent, next);
 			}
 			last = instance.v.last;
 			index++;
@@ -243,7 +238,7 @@ export const iter = (expr, component) => new View(update => {
 			if (instance.c !== cycle) {
 				instances.delete(value);
 				instance.d();
-				instance.v.detach();
+				instance.v.move();
 			}
 		}
 		update(first, last);
@@ -278,7 +273,7 @@ export class Builder extends View {
 	}
 
 	append(...content) {
-		render(...content).attach(this.elem);
+		render(...content).move(this.elem);
 		return this;
 	}
 }
