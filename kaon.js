@@ -32,9 +32,9 @@ let _unfold = fn => {
 	};
 };
 
-export const teardown = hook => void _head(_LIFECYCLE)?.push(hook);
+export let teardown = hook => void _head(_LIFECYCLE)?.push(hook);
 
-export const capture = (fn, ...args) => {
+export let capture = (fn, ...args) => {
 	let hooks = [];
 	try {
 		_in(_LIFECYCLE, hooks, fn, ...args);
@@ -69,16 +69,16 @@ export class Context {
 	}
 }
 
-export const inject = ([state, ...rest], fn, ...args) => {
+export let inject = ([state, ...rest], fn, ...args) => {
 	return state ? state[0].inject(state[1], inject, rest, fn, ...args) : fn(...args);
 };
 
-export const wrap = fn => {
+export let wrap = fn => {
 	let states = _head(_CONTEXT).map(c => [c, c.get()]);
 	return (...args) => _in(_CONTEXT, [], inject, states, fn, ...args);
 };
 
-export const $ = value => {
+export let $ = value => {
 	let hooks = new Set();
 	let notify = () => {
 		let record = [...hooks];
@@ -98,7 +98,7 @@ export const $ = value => {
 	return fn;
 };
 
-export const watch = (expr, cb) => {
+export let watch = (expr, cb) => {
 	let value;
 	let dispose;
 	let entry = _unfold(wrap(() => {
@@ -119,14 +119,14 @@ export const watch = (expr, cb) => {
 	entry();
 };
 
-export const untrack = fn => _in(_ACCESS, () => {}, fn);
+export let untrack = fn => _in(_ACCESS, () => {}, fn);
 
-export const get = expr => typeof expr === "function" ? expr() : expr;
+export let get = expr => typeof expr === "function" ? expr() : expr;
 
 let _frag = () => _DOCUMENT.createDocumentFragment();
 let _empty = () => _DOCUMENT.createComment("");
 
-export const render = (...content) => new View((update, self) => {
+export let render = (...content) => new View((update, self) => {
 	content = content.flat(Infinity);
 	let empty = _empty();
 	let parent = _frag();
@@ -144,7 +144,7 @@ export const render = (...content) => new View((update, self) => {
 				part.own((_, n) => update(self.first, n));
 			}
 		} else {
-			const text = _DOCUMENT.createTextNode("");
+			let text = _DOCUMENT.createTextNode("");
 			watch(part, v => text.textContent = v ?? "");
 			parent.appendChild(text);
 		}
@@ -184,7 +184,7 @@ export class View {
 	}
 }
 
-export const nest = (expr, component = fn => fn?.()) => new View((update, self) => {
+export let nest = (expr, component = fn => fn?.()) => new View((update, self) => {
 	watch(expr, value => {
 		let last = self.last;
 		let parent = last?.parentNode;
@@ -201,7 +201,7 @@ export const nest = (expr, component = fn => fn?.()) => new View((update, self) 
 	});
 });
 
-export const iter = (expr, component) => new View(update => {
+export let iter = (expr, component) => new View(update => {
 	let cycle = 0;
 	let first = _empty();
 	let instances = new Map();
@@ -276,8 +276,8 @@ export class Builder extends View {
 	}
 }
 
-export const XMLNS = new Context();
-export const e = tag => new Builder(
+export let XMLNS = new Context();
+export let e = tag => new Builder(
 	XMLNS.get()
 		? _DOCUMENT.createElementNS(XMLNS.get(), tag)
 		: _DOCUMENT.createElement(tag)
