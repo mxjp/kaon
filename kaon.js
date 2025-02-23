@@ -104,19 +104,18 @@ export const watch = (expr, cb) => {
 	let entry = _unfold(wrap(() => {
 		clear();
 		value = _in(_ACCESS, access, get, expr);
-		dispose?.();
 		dispose = capture(cb, value);
 	}));
 	let signals = [];
-	let clear = () => signals.splice(0).forEach(s => s.delete(entry));
+	let clear = () => {
+		signals.splice(0).forEach(s => s.delete(entry));
+		dispose?.();
+	};
 	let access = hooks => {
 		signals.push(hooks);
 		hooks.add(entry);
 	};
-	teardown(() => {
-		clear();
-		dispose?.();
-	});
+	teardown(clear);
 	entry();
 };
 
