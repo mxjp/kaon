@@ -1,7 +1,7 @@
 {
 	"name": "kaon",
 	"description": "Minimal signal based rendering library for embedded applications",
-	"version": "0.1.12",
+	"version": "0.1.13",
 	"homepage": "https://github.com/mxjp/kaon",
 	"repository": {
 		"type": "git",
