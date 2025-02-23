@@ -213,6 +213,20 @@ function TextInput(value) {
 }
 ```
 
+To use a component, you just call the function and use it's returned content:
+```js
+import { $, render, e } from "./kaon.js";
+
+const name = $("");
+
+render(
+  e("label").append(
+    "Your name:",
+    TextInput(name),
+  )
+).move(document.body);
+```
+
 Teardown hooks are supported in all provided [views](#views), so you can also use them in components:
 ```js
 function ElapsedSeconds() {
