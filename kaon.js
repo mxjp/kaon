@@ -276,5 +276,9 @@ export class Builder extends View {
 	}
 }
 
-export const XMLNS = new Context("http://www.w3.org/1999/xhtml");
-export const e = tag => new Builder(_DOCUMENT.createElementNS(XMLNS.get(), tag));
+export const XMLNS = new Context();
+export const e = tag => new Builder(
+	XMLNS.get()
+		? _DOCUMENT.createElementNS(XMLNS.get(), tag)
+		: _DOCUMENT.createElement(tag)
+);

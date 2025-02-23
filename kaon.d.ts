@@ -259,7 +259,7 @@ export class Builder<E extends Element> extends View {
 export type TagNameMap = HTMLElementTagNameMap & SVGElementTagNameMap & MathMLElementTagNameMap;
 
 export type XMLNS = "http://www.w3.org/1999/xhtml" | "http://www.w3.org/2000/svg" | "http://www.w3.org/1998/Math/MathML";
-export const XMLNS: Context<XMLNS>;
+export const XMLNS: Context<XMLNS | undefined>;
 
 /**
  * Create a new element & builder.
