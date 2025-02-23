@@ -165,7 +165,7 @@ export class View {
 
 	own(owner) {
 		this.#owner = owner;
-		teardown(() => this.#owner = undefined);
+		teardown(() => this.#owner = null);
 	}
 
 	move(parent = _frag(), before) {
