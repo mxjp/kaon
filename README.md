@@ -10,6 +10,7 @@ Kaon has a size of about **3KB** when minified & about **1.5KB** when minified &
 + Custom rendering logic
 + Conditional rendering
 + Element builder API
++ Function components
 
 ## Example
 ```js
