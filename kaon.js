@@ -218,15 +218,14 @@ export const iter = (expr, component) => new View(update => {
 		for (let value of values) {
 			let instance = instances.get(value);
 			if (!instance) {
-				instance = { c: cycle, i: $(index) };
+				instance = { i: $(index) };
 				instance.d = capture(() => {
 					instance.v = render(component(value, instance.i));
 				});
 				instances.set(value, instance);
-			} else {
-				instance.c = cycle;
-				instance.i(index);
 			}
+			instance.c = cycle;
+			instance.i(index);
 			let next = last.nextSibling;
 			if (next !== instance.v.first) {
 				instance.v.move(parent, next);
