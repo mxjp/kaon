@@ -126,32 +126,6 @@ export let get = expr => typeof expr === "function" ? expr() : expr;
 let _frag = () => _DOCUMENT.createDocumentFragment();
 let _empty = () => _DOCUMENT.createComment("");
 
-export let render = (...content) => new View((update, self) => {
-	content = content.flat(Infinity);
-	let empty = _empty();
-	let parent = _frag();
-	for (let i = 0; i < content.length; i++) {
-		let part = content[i];
-		if (part instanceof Node) {
-			parent.appendChild(part);
-		} else if (part instanceof View) {
-			part.move(parent);
-			if (content.length === 1) {
-				part.own(update);
-			} else if (i === 0) {
-				part.own((n, _) => update(n, self.last));
-			} else if (i === content.length - 1) {
-				part.own((_, n) => update(self.first, n));
-			}
-		} else {
-			let text = _DOCUMENT.createTextNode("");
-			watch(part, v => text.textContent = v ?? "");
-			parent.appendChild(text);
-		}
-	}
-	update(parent.firstChild ?? empty, parent.lastChild ?? empty);
-});
-
 export class View {
 	#owner;
 
@@ -183,6 +157,32 @@ export class View {
 		return parent;
 	}
 }
+
+export let render = (...content) => new View((update, self) => {
+	content = content.flat(Infinity);
+	let empty = _empty();
+	let parent = _frag();
+	for (let i = 0; i < content.length; i++) {
+		let part = content[i];
+		if (part instanceof Node) {
+			parent.appendChild(part);
+		} else if (part instanceof View) {
+			part.move(parent);
+			if (content.length === 1) {
+				part.own(update);
+			} else if (i === 0) {
+				part.own((n, _) => update(n, self.last));
+			} else if (i === content.length - 1) {
+				part.own((_, n) => update(self.first, n));
+			}
+		} else {
+			let text = _DOCUMENT.createTextNode("");
+			watch(part, v => text.textContent = v ?? "");
+			parent.appendChild(text);
+		}
+	}
+	update(parent.firstChild ?? empty, parent.lastChild ?? empty);
+});
 
 export let nest = (expr, component = fn => fn?.()) => new View((update, self) => {
 	watch(expr, value => {
