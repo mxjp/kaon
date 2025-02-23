@@ -481,6 +481,9 @@ await suite("builder", async () => {
 
 		signal(false);
 		strictEqual(elem.hasAttribute("foo"), false);
+
+		signal(true);
+		strictEqual(elem.getAttribute("foo"), "");
 	});
 
 	await test("prop", () => {
