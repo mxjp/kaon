@@ -188,14 +188,13 @@ export const nest = (expr, component = fn => fn?.()) => new View((update, self) 
 	watch(expr, value => {
 		let last = self.last;
 		let parent = last?.parentNode;
-		let view;
+		let anchor = last?.nextSibling;
 		if (parent) {
-			let anchor = last.nextSibling;
 			self.move();
-			view = render(component(value));
+		}
+		let view = render(component(value));
+		if (parent) {
 			view.move(parent, anchor);
-		} else {
-			view = render(component(value));
 		}
 		update(view.first, view.last);
 		view.own(update);
