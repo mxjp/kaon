@@ -254,7 +254,7 @@ export class Builder extends View {
 			if ((value ?? false) === false) {
 				this.elem.removeAttribute(name);
 			} else {
-				this.elem.setAttribute(name, String(value));
+				this.elem.setAttribute(name, value);
 			}
 		});
 		return this;
