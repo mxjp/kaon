@@ -164,9 +164,7 @@ export let render = (...content) => new View((update, self) => {
 	let parent = _frag();
 	for (let i = 0; i < content.length; i++) {
 		let part = content[i];
-		if (part instanceof Node) {
-			parent.appendChild(part);
-		} else if (part instanceof View) {
+		if (part instanceof View) {
 			part.move(parent);
 			if (content.length === 1) {
 				part.own(update);
@@ -176,9 +174,12 @@ export let render = (...content) => new View((update, self) => {
 				part.own((_, n) => update(self.first, n));
 			}
 		} else {
-			let text = _DOCUMENT.createTextNode("");
-			watch(part, v => text.textContent = v ?? "");
-			parent.appendChild(text);
+			let node = part;
+			if (!(part instanceof Node)) {
+				node = _DOCUMENT.createTextNode("");
+				watch(part, v => node.textContent = v ?? "");
+			}
+			parent.appendChild(node);
 		}
 	}
 	update(parent.firstChild ?? empty, parent.lastChild ?? empty);
