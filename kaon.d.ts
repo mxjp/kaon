@@ -208,18 +208,11 @@ export function iter<T>(expr: Expression<Iterable<T>>, component: (value: T, ind
 
 export type EventListener<E extends Event> = (event: E) => void;
 
-export class Builder<E extends Element> extends View {
+export interface Builder<E extends Element> extends View {
 	/**
 	 * The target element this builder is modifying.
 	 */
 	elem: E;
-
-	/**
-	 * Create a new element builder for the specified element.
-	 *
-	 * For also creating an element, use the {@link e} shorthand.
-	 */
-	constructor(elem: Element);
 
 	/**
 	 * Set an attribute.
@@ -258,19 +251,19 @@ export class Builder<E extends Element> extends View {
 
 export type TagNameMap = HTMLElementTagNameMap & SVGElementTagNameMap & MathMLElementTagNameMap;
 
-export type XMLNS = "http://www.w3.org/1999/xhtml" | "http://www.w3.org/2000/svg" | "http://www.w3.org/1998/Math/MathML";
-export const XMLNS: Context<XMLNS | undefined>;
+export type NS = "http://www.w3.org/1999/xhtml" | "http://www.w3.org/2000/svg" | "http://www.w3.org/1998/Math/MathML";
+export const NS: Context<NS | undefined>;
 
 /**
  * Create a new element & builder.
  *
- * This uses the current {@link XMLNS} value to determine the namespace.
+ * This uses the current {@link NS} value to determine the namespace.
  *
  * @example
  * ```js
  * e("h1").append("Hello World!")
  *
- * XMLNS.inject("http://www.w3.org/2000/svg", () => {
+ * NS.inject("http://www.w3.org/2000/svg", () => {
  *   return e("svg").set("viewbox", "0 0 ...")
  * })
  */

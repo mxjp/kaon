@@ -32,9 +32,9 @@ let _unfold = fn => {
 	};
 };
 
-export let teardown = hook => void _head(_LIFECYCLE)?.push(hook);
+let teardown = hook => void _head(_LIFECYCLE)?.push(hook);
 
-export let capture = (fn, ...args) => {
+let capture = (fn, ...args) => {
 	let hooks = [];
 	try {
 		_in(_LIFECYCLE, hooks, fn, ...args);
@@ -45,7 +45,7 @@ export let capture = (fn, ...args) => {
 	return () => _dispose(hooks);
 };
 
-export class Context {
+class Context {
 	#stack = [];
 	#window = [0];
 
@@ -69,16 +69,16 @@ export class Context {
 	}
 }
 
-export let inject = ([state, ...rest], fn, ...args) => {
+let inject = ([state, ...rest], fn, ...args) => {
 	return state ? state[0].inject(state[1], inject, rest, fn, ...args) : fn(...args);
 };
 
-export let wrap = fn => {
+let wrap = fn => {
 	let states = _head(_CONTEXT).map(c => [c, c.get()]);
 	return (...args) => _in(_CONTEXT, [], inject, states, fn, ...args);
 };
 
-export let $ = value => {
+let $ = value => {
 	let hooks = new Set();
 	let notify = () => {
 		let record = [...hooks];
@@ -98,7 +98,7 @@ export let $ = value => {
 	return fn;
 };
 
-export let watch = (expr, cb) => {
+let watch = (expr, cb) => {
 	let value;
 	let dispose;
 	let entry = _unfold(wrap(() => {
@@ -119,14 +119,14 @@ export let watch = (expr, cb) => {
 	entry();
 };
 
-export let untrack = fn => _in(_ACCESS, () => {}, fn);
+let untrack = fn => _in(_ACCESS, () => {}, fn);
 
-export let get = expr => typeof expr === "function" ? expr() : expr;
+let get = expr => typeof expr === "function" ? expr() : expr;
 
 let _frag = () => _DOCUMENT.createDocumentFragment();
 let _empty = () => _DOCUMENT.createComment("");
 
-export class View {
+class View {
 	#owner;
 
 	constructor(init) {
@@ -158,7 +158,7 @@ export class View {
 	}
 }
 
-export let render = (...content) => new View((update, self) => {
+let render = (...content) => new View((update, self) => {
 	content = content.flat(Infinity);
 	let empty = _empty();
 	let parent = _frag();
@@ -185,7 +185,7 @@ export let render = (...content) => new View((update, self) => {
 	update(parent.firstChild ?? empty, parent.lastChild ?? empty);
 });
 
-export let nest = (expr, component = fn => fn?.()) => new View((update, self) => {
+let nest = (expr, component = fn => fn?.()) => new View((update, self) => {
 	watch(expr, value => {
 		let last = self.last;
 		let parent = last?.parentNode;
@@ -202,7 +202,7 @@ export let nest = (expr, component = fn => fn?.()) => new View((update, self) =>
 	});
 });
 
-export let iter = (expr, component) => new View(update => {
+let iter = (expr, component) => new View(update => {
 	let cycle = 0;
 	let first = _empty();
 	let instances = new Map();
@@ -244,7 +244,7 @@ export let iter = (expr, component) => new View(update => {
 	});
 });
 
-export class Builder extends View {
+class Builder extends View {
 	constructor(elem) {
 		super(update => update(elem, elem));
 		this.elem = elem;
@@ -277,9 +277,27 @@ export class Builder extends View {
 	}
 }
 
-export let XMLNS = new Context();
-export let e = tag => new Builder(
-	XMLNS.get()
-		? _DOCUMENT.createElementNS(XMLNS.get(), tag)
+let NS = new Context();
+let e = tag => new Builder(
+	NS.get()
+		? _DOCUMENT.createElementNS(NS.get(), tag)
 		: _DOCUMENT.createElement(tag)
 );
+
+export {
+	teardown,
+	capture,
+	Context,
+	inject,
+	wrap,
+	$,
+	watch,
+	untrack,
+	get,
+	View,
+	render,
+	nest,
+	iter,
+	NS,
+	e,
+};

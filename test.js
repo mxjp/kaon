@@ -1,7 +1,7 @@
 // @ts-check
 import { deepStrictEqual, strictEqual, throws } from "node:assert";
 import { suite, test } from "node:test";
-import { $, capture, Context, e, inject, iter, nest, render, teardown, untrack, View, watch, wrap, XMLNS } from "./kaon.js";
+import { $, capture, Context, e, inject, iter, nest, NS, render, teardown, untrack, View, watch, wrap } from "./kaon.js";
 
 await suite("lifecycle", async () => {
 	await test("basic usage", () => {
@@ -454,7 +454,7 @@ await test("iter", async () => {
 await suite("builder", async () => {
 	await test("namespace", () => {
 		strictEqual(e("div").elem instanceof window.HTMLElement, true);
-		XMLNS.inject("http://www.w3.org/2000/svg", () => {
+		NS.inject("http://www.w3.org/2000/svg", () => {
 			strictEqual(e("div").elem instanceof window.SVGElement, true);
 		});
 	});
