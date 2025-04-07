@@ -192,6 +192,17 @@ e("div")
 
 Element builders are [views](#views) and can be directly used as content.
 
+SVG and MathML elements can be rendered by injecting the respective namespace:
+```js
+import { NS, e } from "./kaon.js";
+
+NS.inject("http://www.w3.org/2000/svg", () => [
+  e("svg").set("width", 100).set("height", 100).append(
+    e("circle").set("r", 40).set("cx", 50).set("cy", 50).set("fill", "red"),
+  ),
+])
+```
+
 ### Components
 Components are just functions with arbitrary arguments returning any kind of content that is supported by the [**render**](#views) function.
 
