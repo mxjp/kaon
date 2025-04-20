@@ -7,6 +7,7 @@
 		"type": "git",
 		"url": "https://github.com/mxjp/kaon"
 	},
+	"license": "Unlicense",
 	"keywords": [
 		"context",
 		"embedded",
