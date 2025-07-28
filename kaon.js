@@ -162,15 +162,15 @@ let render = (...content) => new View((update, self) => {
 	content = content.flat(Infinity);
 	let empty = _empty();
 	let parent = _frag();
-	for (let i = 0; i < content.length; i++) {
-		let part = content[i];
+	let length = content.length;
+	for (let part of content) {
 		if (part instanceof View) {
 			part.move(parent);
-			if (content.length === 1) {
+			if (length === 1) {
 				part.own(update);
-			} else if (i === 0) {
+			} else if (content[0] === part) {
 				part.own((n, _) => update(n, self.last));
-			} else if (i === content.length - 1) {
+			} else if (content[length - 1] === part) {
 				part.own((_, n) => update(self.first, n));
 			}
 		} else {
